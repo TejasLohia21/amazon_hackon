@@ -92,7 +92,6 @@ class CLIPModel:
         Checks if the text is supported by the image, handling potential file errors.
         """
         try:
-            # Attempt to open the image file
             image = Image.open(image_path)
         except (FileNotFoundError, UnidentifiedImageError) as e:
             # If the file is not found or is corrupted/invalid, log the error and return False
@@ -107,7 +106,6 @@ class CLIPModel:
             padding=True
         ).to(self.device)
 
-        # Get the similarity score from the model
         with torch.no_grad():
             outputs = self.model(**inputs)
             logits_per_image = outputs.logits_per_image
@@ -140,7 +138,6 @@ class ReviewVisualVerifier:
             print("No visually verifiable claims found. Exiting.")
             return {}
 
-        # 3. Detect media type and prepare images/frames.
         media_type = FileTypeChecker.detect_media_type(media_path)
         image_paths = []
         if media_type == 'image':
@@ -154,11 +151,9 @@ class ReviewVisualVerifier:
         else:
             raise ValueError(f"Unsupported media type for file: {media_path}")
 
-        # 4. Check each verified claim against the image(s) using CLIP.
         print("4. Verifying claims against media with CLIP model...")
         results = {}
         for claim in verified_claims:
-            # Check if ANY of the images/frames support the claim.
             is_supported = any(self.clip_model.check_text_in_image(claim, img_path) for img_path in image_paths)
             results[claim] = is_supported
             print(f"   - Claim: '{claim}' -> Supported: {is_supported}")
@@ -166,10 +161,8 @@ class ReviewVisualVerifier:
         print("--- Pipeline Finished ---")
         return results
 
-# --- Usage Example ---
 
 if __name__ == "__main__":
-    # NOTE: Using a dummy key will result in an authentication error.
     GROQ_API_KEY = "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" 
 
     # Instantiate your dependencies
@@ -185,24 +178,15 @@ if __name__ == "__main__":
         clip_model=clip_model_stub
     )
 
-    # --- Run with an example review and image ---
     review_text = "This phone is great, but it arrived with a noticeable crack on the screen. The box was fine, though."
-    # Create dummy files for testing
-    dummy_image_path = "/Users/tejasmacipad/Downloads/images.jpeg"
-    with open(dummy_image_path, 'w') as f:
-        f.write("dummy image content")
+    image_to_test = "/Users/tejasmacipad/Downloads/shattered-iphone-screen.png"
 
     try:
-        verification_results = pipeline.process_review(review_text, dummy_image_path)
+        verification_results = pipeline.process_review(review_text, image_to_test)
         print("\n--- Final Results ---")
         print(verification_results)
     except requests.exceptions.HTTPError as e:
         print(f"\nAPI Error: {e}. Please check your API key and network connection.")
     except FileNotFoundError as e:
         print(f"\nFile Error: {e}. Please check your media file path.")
-    finally:
-        # Clean up dummy file
-        if os.path.exists(dummy_image_path):
-            os.remove(dummy_image_path)
-
 
