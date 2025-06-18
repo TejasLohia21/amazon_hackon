@@ -74,25 +74,32 @@ class VisualClaimVerifier:
     def filter_claims(self, claims: List[str]) -> List[str]:
         return [claim for claim in claims if self.llm_client.verify_claim(claim)]
     
+# --- CLIP Model (Robust Version) ---
+from PIL import Image, UnidentifiedImageError
+from transformers import CLIPProcessor, CLIPModel as HuggingFaceCLIPModel
+import torch
+
 class CLIPModel:
-    """A real implementation of the CLIP model for visual-text similarity."""
+    """A robust implementation of the CLIP model that handles image errors."""
     def __init__(self, model_name="openai/clip-vit-base-patch32"):
-        self.device = "mps" if torch.cuda.is_available() else "cpu"
+        self.device = "cuda" if torch.cuda.is_available() else "cpu"
         self.model = HuggingFaceCLIPModel.from_pretrained(model_name).to(self.device)
         self.processor = CLIPProcessor.from_pretrained(model_name)
         print(f"CLIP model loaded on device: {self.device}")
 
     def check_text_in_image(self, text: str, image_path: str, threshold: float = 0.2) -> bool:
         """
-        Checks if the text description is visually supported by the image.
+        Checks if the text is supported by the image, handling potential file errors.
         """
         try:
+            # Attempt to open the image file
             image = Image.open(image_path)
-        except FileNotFoundError:
-            print(f"Error: Image file not found at {image_path}")
+        except (FileNotFoundError, UnidentifiedImageError) as e:
+            # If the file is not found or is corrupted/invalid, log the error and return False
+            print(f"[ERROR] Could not process image '{image_path}'. Reason: {e}")
             return False
 
-        # Process the image and text
+        # Process the image and text for CLIP
         inputs = self.processor(
             text=[text],
             images=image,
@@ -100,10 +107,9 @@ class CLIPModel:
             padding=True
         ).to(self.device)
 
-        # Get similarity score
+        # Get the similarity score from the model
         with torch.no_grad():
             outputs = self.model(**inputs)
-            # The logits_per_image is a tensor with the similarity score
             logits_per_image = outputs.logits_per_image
             probability = logits_per_image.softmax(dim=1)
             score = probability[0][0].item()
