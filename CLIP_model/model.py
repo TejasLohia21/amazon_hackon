@@ -162,31 +162,82 @@ class ReviewVisualVerifier:
         return results
 
 
-if __name__ == "__main__":
-    GROQ_API_KEY = "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" 
+# if __name__ == "__main__":
+#     GROQ_API_KEY = "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" 
 
-    # Instantiate your dependencies
-    llm_client = LLMClient(api_key=GROQ_API_KEY)
-    claim_extractor = VisualClaimExtractor(llm_client)
-    claim_verifier = VisualClaimVerifier(llm_client)
-    clip_model_stub = CLIPModel() # Using the placeholder
+#     # Instantiate your dependencies
+#     llm_client = LLMClient(api_key=GROQ_API_KEY)
+#     claim_extractor = VisualClaimExtractor(llm_client)
+#     claim_verifier = VisualClaimVerifier(llm_client)
+#     clip_model_stub = CLIPModel() # Using the placeholder
 
-    # Main orchestrator
-    pipeline = ReviewVisualVerifier(
-        claim_extractor=claim_extractor,
-        claim_verifier=claim_verifier,
-        clip_model=clip_model_stub
-    )
+#     # Main orchestrator
+#     pipeline = ReviewVisualVerifier(
+#         claim_extractor=claim_extractor,
+#         claim_verifier=claim_verifier,
+#         clip_model=clip_model_stub
+#     )
 
-    review_text = "This phone is great, but it arrived with a noticeable crack on the screen. The box was fine, though."
-    image_to_test = "/Users/tejasmacipad/Downloads/shattered-iphone-screen.png"
+#     review_text = "This phone is great, but it arrived with a noticeable crack on the screen. The box was fine, though."
+#     image_to_test = "/Users/tejasmacipad/Downloads/shattered-iphone-screen.png"
 
-    try:
-        verification_results = pipeline.process_review(review_text, image_to_test)
-        print("\n--- Final Results ---")
-        print(verification_results)
-    except requests.exceptions.HTTPError as e:
-        print(f"\nAPI Error: {e}. Please check your API key and network connection.")
-    except FileNotFoundError as e:
-        print(f"\nFile Error: {e}. Please check your media file path.")
+#     try:
+#         verification_results = pipeline.process_review(review_text, image_to_test)
+#         print("\n--- Final Results ---")
+#         print(verification_results)
+#     except requests.exceptions.HTTPError as e:
+#         print(f"\nAPI Error: {e}. Please check your API key and network connection.")
+#     except FileNotFoundError as e:
+#         print(f"\nFile Error: {e}. Please check your media file path.")
 
+# Place this class in main.py, above your `if __name__ == "__main__":` block
+
+class ReviewPipeline:
+    """
+    A class-based wrapper to encapsulate the entire review verification pipeline.
+
+    The setup of all models (LLM, CLIP) is done once during initialization,
+    making it efficient to run multiple reviews.
+    """
+    def __init__(self, api_key: str):
+        """
+        Initializes and configures all necessary components for the pipeline.
+
+        Args:
+            api_key (str): The API key for the LLM service (e.g., GroqCloud).
+        """
+        print("--- Initializing Pipeline Wrapper ---")
+        # Instantiate all dependencies once
+        self.llm_client = LLMClient(api_key=api_key)
+        self.claim_extractor = VisualClaimExtractor(self.llm_client)
+        self.claim_verifier = VisualClaimVerifier(self.llm_client)
+        # Use the real CLIPModel
+        self.clip_model = CLIPModel()
+
+        # Create the main orchestrator instance that this wrapper will use
+        self.pipeline = ReviewVisualVerifier(
+            claim_extractor=self.claim_extractor,
+            claim_verifier=self.claim_verifier,
+            clip_model=self.clip_model
+        )
+        print("--- Initialized and ready ---")
+
+    def run(self, review_text: str, media_path: str) -> dict:
+        """
+        Runs the full visual verification pipeline on a single review.
+
+        Args:
+            review_text (str): The full text of the user's review.
+            media_path (str): The local file path to the accompanying image or video.
+
+        Returns:
+            dict: A dictionary containing the verification results,
+                  or an 'error' key with a message on failure.
+        """
+        try:
+            # Delegate the processing to the internal pipeline instance
+            return self.pipeline.process_review(review_text, media_path)
+        except (requests.exceptions.HTTPError, FileNotFoundError, Exception) as e:
+            error_message = f"Pipeline execution failed: {e}"
+            print(f"[FATAL] {error_message}")
+            return {"error": error_message}
