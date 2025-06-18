@@ -1,6 +1,6 @@
 from run import ReviewPipelineWrapper
 
-API_KEY = "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"
+API_KEY = "" # Replace with your actual key
 REVIEW_1 = "The camera lens was shattered on arrival."
 IMAGE_1 = "/path/to/review1_image.jpg"
 REVIEW_2 = "The t-shirt color was completely wrong."
