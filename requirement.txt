@@ -1,4 +1,7 @@
-import os
-from typing import List
-import imageio
-from moviepy.editor import VideoFileClip
+requests
+imageio
+filetype
+opencv-python
+transformers
+torch
+Pillow

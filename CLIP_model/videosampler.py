@@ -1,39 +1,44 @@
 import os
+import cv2
 from typing import List
-import imageio
-from moviepy.editor import VideoFileClip
 
 class VideoSampler:
-    def __init__(self, video_path: str, output_dir: str, fps: int = 0.1):
+    """Samples frames from a video file using OpenCV."""
+    def __init__(self, video_path: str, output_dir: str, fps: float = 0.5):
+        if not os.path.isfile(video_path):
+            raise FileNotFoundError(f"Video file not found: {video_path}")
+        if fps <= 0:
+            raise ValueError("FPS must be a positive number.")
+
         self.video_path = video_path
         self.output_dir = output_dir
         self.fps = fps
-        self.frames = []
-        self._validate_inputs()
-        if not os.path.exists(self.output_dir):
-            os.makedirs(self.output_dir)
-
-    def _validate_inputs(self):
-        if not os.path.isfile(self.video_path):
-            raise FileNotFoundError(f"Video file not found: {self.video_path}")
-        if self.fps <= 0:
-            raise ValueError("FPS must be a positive integer.")
+        os.makedirs(self.output_dir, exist_ok=True)
 
     def sample_frames(self) -> List[str]:
-        clip = VideoFileClip(self.video_path)
-        duration = clip.duration
-        frame_paths = []
-        num_frames = int(duration * self.fps)
-        for i in range(num_frames):
-            t = i / self.fps
-            frame = clip.get_frame(t)
-            frame_filename = os.path.join(self.output_dir, f"frame_{i:05d}.jpg")
-            imageio.imwrite(frame_filename, frame)
-            frame_paths.append(frame_filename)
-        self.frames = frame_paths
-        return frame_paths
+        cap = cv2.VideoCapture(self.video_path)
+        if not cap.isOpened():
+            raise IOError(f"Cannot open video file: {self.video_path}")
 
-# Usage Example:
-# sampler = VideoSampler('input_video.mp4', 'output_frames', fps=0.1)
-# frame_files = sampler.sample_frames()
-# print(frame_files)
+        video_fps = cap.get(cv2.CAP_PROP_FPS)
+        frame_interval = int(video_fps / self.fps)
+
+        frame_paths = []
+        frame_index = 0
+        saved_index = 0
+
+        while True:
+            ret, frame = cap.read()
+            if not ret:
+                break
+
+            if frame_index % frame_interval == 0:
+                frame_filename = os.path.join(self.output_dir, f"frame_{saved_index:05d}.jpg")
+                cv2.imwrite(frame_filename, frame)
+                frame_paths.append(frame_filename)
+                saved_index += 1
+
+            frame_index += 1
+
+        cap.release()
+        return frame_paths
