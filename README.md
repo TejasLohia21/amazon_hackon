@@ -2,7 +2,8 @@
 
 This repository contains the source code and documentation for a sophisticated, multi-modal AI system designed to verify the authenticity of online reviews. By analyzing text, images, videos, and user metadata in concert, the model provides a robust defense against fraudulent, AI-generated, and misleading content, ensuring a more trustworthy e-commerce ecosystem.
 
-![System Architecture](https://pplx-res.cloudinary.com/image/private/user_uploadsem-architecture)
+![System Architecture](https://github.com/user-attachments/assets/bf9dfb38-f249-430e-aa14-40edd6779fa3)
+
 - [Technology Stack](#technology-stack)
 - [Installation](#installation)
 - [Usage](#usage)
