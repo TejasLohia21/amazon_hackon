@@ -3,6 +3,7 @@
 This repository contains the source code and documentation for a sophisticated, multi-modal AI system designed to verify the authenticity of online reviews. By analyzing text, images, videos, and user metadata in concert, the model provides a robust defense against fraudulent, AI-generated, and misleading content, ensuring a more trustworthy e-commerce ecosystem.
 
 ![System Architecture](https://github.com/user-attachments/assets/bf9dfb38-f249-430e-aa14-40edd6779fa3)
+![Confusion Matrix on Test Set](https://github.com/user-attachments/assets/d851aaf3-e1ee-477f-8c45-d55b9b27bc9c)
 
 - [Technology Stack](#technology-stack)
 - [Installation](#installation)
